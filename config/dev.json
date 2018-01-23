@@ -1,0 +1,75 @@
+{
+    "CONSUL": {
+
+        "api": {
+
+            "host": "consul.atajo.io",
+            "port": 443,
+            "secure": true,
+            "promisify": true
+
+        },
+        "checkInterval": 10000,
+        "fetch": {
+            "mobility/core/providers": "3da0effa-3b30-c29d-3a2c-a9999aa59651",
+            "mobility/domains/": "1e7343b2-e650-a87b-e8b6-5579da4e2550"
+        }
+
+    },
+
+    "MONGO": {
+        "dev": {
+            "host": "mongodb://localhost/atajo_core_dev"
+        },
+        "qas": {
+            "host": "mongodb://localhost/atajo_core_qas"
+        },
+        "prd": {
+            "host": "mongodb://localhost/atajo_core_prd"
+        }
+
+
+    },
+
+    "REDIS": {
+        "dev": {
+            "host": "localhost",
+            "port": "6379"
+        },
+        "qas": {
+            "host": "localhost",
+            "port": "6379"
+        },
+        "prd": {
+            "host": "localhost",
+            "port": "6379"
+        }
+
+
+    },
+
+    "API": {
+        "port": 9000,
+        "version": "1.0"
+    },
+
+    "CLIENT": {
+
+        "SOCKET": {
+
+            "OPTIONS": {
+                "reconnection": true,
+                "reconnectionAttempts": 50,
+                "reconnectionDelay": 1000,
+                "reconnectionDelayMax": 30000,
+                "randomizationFactor": 0.5,
+                "timeout": 10000,
+                "autoConnect": true
+            }
+
+        }
+
+    }
+
+
+}
