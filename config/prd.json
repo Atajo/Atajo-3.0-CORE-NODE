@@ -18,17 +18,8 @@
     },
 
     "MONGO": {
-        "dev": {
-            "host": "mongodb://localhost/atajo_core_dev"
-        },
-        "qas": {
-            "host": "mongodb://localhost/atajo_core_qas"
-        },
-        "prd": {
-            "host": "mongodb://localhost/atajo_core_prd"
-        }
-
-
+        "host": "mongodb://localhost/ATAJO-CORE",
+        "discriminate": false
     },
 
     "REDIS": {
@@ -46,11 +37,6 @@
         }
 
 
-    },
-
-    "API": {
-        "port": 9000,
-        "version": "1.0"
     },
 
     "CLIENT": {

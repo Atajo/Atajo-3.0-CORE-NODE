@@ -2,7 +2,7 @@
 
 const path = require('path');
 const nconf = require('nconf');
-const release = process.env.NODE_ENV = process.env.NODE_ENV || 'dev';
+const release = process.env.NODE_ENV = process.env.NODE_ENV || 'prd';
 const host = require('os').hostname();
 
 nconf.argv()

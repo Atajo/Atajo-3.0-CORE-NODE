@@ -6,9 +6,27 @@ var path = require('path');
 
 class DBI {
 
-    constructor() {
+    constructor(config) {
+
+        this.config = config;
+
+        if (!this.config.host) {
+            log.error("COULD NOT INIT DB. HOST NOT SPECIFIED IN CONFIG");
+            return;
+        }
 
         this.schemaDir = path.join(__dirname, 'schemas');
+
+        if (this.config.discriminate) {
+
+            this.baseOptions = {
+                discriminatorKey: '__type',
+                collection: 'data',
+                timestamps: true
+            }
+            this.Base = mongoose.model('Base', new mongoose.Schema({}, this.baseOptions));
+        }
+
         return this;
 
     }
@@ -22,7 +40,7 @@ class DBI {
         return new Promise((resolve, reject) => {
 
             //LOAD THE SCHEMAS
-            fs.readdir(this.schemaDir, function(err, files) {
+            fs.readdir(this.schemaDir, (err, files) => {
 
                 if (err) {
                     reject("COULD NOT READ SCHEMAS. MONGODB INIT FAILED : " + err);
@@ -54,9 +72,13 @@ class DBI {
                     var schemaData = _.schemas[schema];
 
                     var schemaRefName = schemaName.replace('Schema', '') + 's';
-                    log.debug("LOADING SCHEMA " + schemaName + " (" + schemaRefName + ")"); // => "+JSON.stringify(schemaInstance));
+                    log.debug("LOADING SCHEMA " + schemaName + " (" + schemaRefName + ")");
 
-                    _.schemas[schemaRefName] = (typeof _.schemas[schemaRefName] == 'undefined') ? mongoose.model(schemaName, new mongoose.Schema(schemaData, { timestamps: true })) : _.schemas[schemaRefName];
+                    if (this.config.discriminate) {
+                        _.schemas[schemaRefName] = (typeof _.schemas[schemaRefName] == 'undefined') ? this.Base.discriminator(schemaName, new mongoose.Schema(schemaData, { timestamps: true })) : _.schemas[schemaRefName];
+                    } else {
+                        _.schemas[schemaRefName] = (typeof _.schemas[schemaRefName] == 'undefined') ? mongoose.model(schemaName, new mongoose.Schema(schemaData, { timestamps: true })) : _.schemas[schemaRefName];
+                    }
 
                 }
 
@@ -75,7 +97,7 @@ class DBI {
 
     }
 
-    connect(connectionString) {
+    connect() {
 
         var _ = this;
 
@@ -87,7 +109,7 @@ class DBI {
                 }
             };
 
-            log.info("MONGO:CONNECTING TO " + connectionString);
+            log.info("MONGO:CONNECTING TO " + this.config.host);
 
             //CONNECT TO DB
             mongoose.connection.on('error', reject);
@@ -95,7 +117,7 @@ class DBI {
                 resolve(_.schemas);
             });
 
-            mongoose.connect(connectionString, options);
+            mongoose.connect(this.config.host, options);
 
 
         });

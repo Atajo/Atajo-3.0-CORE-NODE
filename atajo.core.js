@@ -23,10 +23,10 @@ var firewall = null;
 class Core {
 
 
-    constructor(id, corePort, release) {
+    constructor(id, corePort) {
 
         this.port = corePort;
-        global.release = release;
+        global.release = 'prd'; // LEGACY - TODO: REMOVE
 
         log = new Log(release, config.get("LOGPATH") || path.join(__dirname, 'logs', 'node_' + id + '_' + corePort));
 
@@ -41,12 +41,9 @@ class Core {
 
         log.debug("CORE:STARTING " + release.toUpperCase() + " ON " + _.port);
 
-        let mongoConnectionString = config.get('MONGO')[release].host;
-        log.debug("CORE:CONNECTING TO DATABASE @ ", mongoConnectionString);
+        new DBI(config.get('MONGO')).init().then(dbi => {
 
-        new DBI().init().then(dbi => {
-
-            dbi.connect(mongoConnectionString).then(schemas => {
+            dbi.connect().then(schemas => {
 
                 global.dbi = schemas;
 
@@ -257,9 +254,8 @@ class Core {
 //CLI
 if (!process.send) {
 
-    let release = process.argv[2] || 'dev';
-    let corePort = process.argv[3] || '80';
-    let instance = new Core(0, corePort, release).start();
+    let corePort = process.argv[2] || '80';
+    let instance = new Core(0, corePort).start();
 
 
 }
