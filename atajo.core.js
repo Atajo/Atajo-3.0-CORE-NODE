@@ -240,7 +240,11 @@ class Core {
 if (!process.send) {
 
     const coreRelease = process.argv[2] || process.env.CORE_ENV || 'dev';
+    process.env.CORE_ENV = coreRelease;
+
     let corePort = process.argv[3] || process.env.CORE_PORT || '80';
+    process.env.CORE_PORT = coreRelease;
+
     let instance = new Core(0, corePort, coreRelease).start();
 
 }
