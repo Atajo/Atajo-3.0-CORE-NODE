@@ -106,8 +106,9 @@ class DBI {
             let options = {
                 db: {
                     native_parser: true,
-                    useMongoClient: true
-                }
+                },
+                useMongoClient: true
+
             };
 
             log.info("MONGO:CONNECTING TO " + this.config.host);
@@ -131,4 +132,4 @@ class DBI {
 
 }
 
-module.exports = DBI;
+module.exports = DBI
