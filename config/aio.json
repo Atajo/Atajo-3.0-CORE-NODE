@@ -18,13 +18,14 @@
     },
 
     "MONGO": {
-        "host": "mongodb://localhost/ATAJO-CORE?connectTimeoutMS=30000",
+        "host": "mongodb://mongo:27017/ATAJO-CORE?connectTimeoutMS=30000",
         "discriminate": false
     },
 
     "REDIS": {
-        "host": "localhost",
+        "host": "redis",
         "port": "6379"
+
     },
 
     "CLIENT": {

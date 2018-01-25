@@ -18,13 +18,14 @@
     },
 
     "MONGO": {
-        "host": "mongodb://localhost/ATAJO-CORE?connectTimeoutMS=30000",
-        "discriminate": false
+        "host": "mongodb://bhm-atajo-documentdb:s2xBSbEJra4qoOgbXQF13lnSOoWclEwcjPHcKuG1ZSX6ayTaJRW26Iz0dfc4kaO540WX77qq6rxpoLrRhPqiEw==@bhm-atajo-documentdb.documents.azure.com:10255/?ssl=true",
+        "discriminate": true
     },
 
     "REDIS": {
-        "host": "localhost",
-        "port": "6379"
+        "host": "atajo-core-cache.redis.cache.windows.net",
+        "port": 6380,
+        "key": "G3hGegg/iz70fDvIMoRrC9UeQIck7we3fDEdulmoHfY="
     },
 
     "CLIENT": {

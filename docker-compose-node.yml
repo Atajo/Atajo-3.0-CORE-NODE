@@ -1,0 +1,14 @@
+version: '3'
+services:
+    core:
+      build: .
+      env_file:
+       - ./env/node.env
+      ports:
+        - 30000:30000
+      volumes:
+        - .:/opt/app
+      hostname: atajo.core
+      command: [ "node", "atajo.core.js"]
+   
+    

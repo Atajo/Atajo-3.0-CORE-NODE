@@ -7,4 +7,3 @@ RUN npm install
 
 EXPOSE 30000
 
-CMD [ "node", "atajo.core.js", "dev", "30000" ]

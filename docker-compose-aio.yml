@@ -17,6 +17,8 @@ services:
       restart: always
     core:
       build: .
+      env_file:
+       - ./env/aio.env
       ports:
         - 30000:30000
       volumes:
@@ -25,5 +27,6 @@ services:
       depends_on:
         - mongo
         - redis
+      command: [ "node", "atajo.core.js"]
    
     

@@ -2,7 +2,7 @@
 
 const path = require('path');
 const nconf = require('nconf');
-const release = process.env.NODE_ENV = process.env.NODE_ENV || 'dev';
+const release = process.env.CORE_ENV = process.env.CORE_ENV || 'dev';
 const host = require('os').hostname();
 
 nconf
@@ -13,6 +13,6 @@ nconf
         file: path.join(__dirname, `${release}.json`)
     })
 
-nconf.defaults({release: release, host: host});
+nconf.defaults({ release: release, host: host });
 
 module.exports = nconf;

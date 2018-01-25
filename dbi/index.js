@@ -105,7 +105,8 @@ class DBI {
 
             let options = {
                 db: {
-                    native_parser: true
+                    native_parser: true,
+                    useMongoClient: true
                 }
             };
 
