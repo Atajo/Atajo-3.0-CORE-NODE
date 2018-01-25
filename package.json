@@ -4,7 +4,10 @@
   "description": "",
   "main": "atajo.core.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node atajo.core.js dev 30000",
+    "qas": "node atajo.core.js qas 30000",
+    "prd": "node atajo.core.js prd 30000"
   },
   "author": "",
   "license": "ISC",
@@ -17,7 +20,7 @@
     "moment": "^2.18.1",
     "mongoose": "^4.11.2",
     "nconf": "^0.8.4",
-    "node-uuid": "^1.4.8",
+    "uuid": "^1.4.8",
     "rxjs": "^5.4.2",
     "socket.io": "^2.0.3",
     "socket.io-client": "^2.0.3",

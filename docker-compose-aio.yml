@@ -1,0 +1,29 @@
+version: '3'
+services:
+    mongo:
+      container_name: mongo
+      image: mongo:3.6
+      volumes:
+        - ./mongodb:/data/db
+      ports:
+        - 27017:27017
+    redis:
+      container_name: redis
+      image: redis
+      ports:
+        - "6379:6379"
+      volumes:
+        - ../data/redis:/data
+      restart: always
+    core:
+      build: .
+      ports:
+        - 30000:30000
+      volumes:
+        - .:/opt/app
+      hostname: atajo.core
+      depends_on:
+        - mongo
+        - redis
+   
+    
