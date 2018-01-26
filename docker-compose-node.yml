@@ -6,6 +6,7 @@ services:
        - ./env/node.env
       ports:
         - 30000:30000
+        - 40000:40000
       volumes:
         - .:/opt/app
       hostname: atajo.core
