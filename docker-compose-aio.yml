@@ -1,14 +1,14 @@
 version: '3'
 services:
     mongo:
-      container_name: mongo
+      container_name: core.mongo
       image: mongo:3.6
       volumes:
         - ./mongodb:/data/db
       ports:
         - 27017:27017
     redis:
-      container_name: redis
+      container_name: core.redis
       image: redis
       ports:
         - "6379:6379"
@@ -21,7 +21,6 @@ services:
        - ./env/aio.env
       ports:
         - 30000:30000
-        - 40000:40000
       volumes:
         - .:/opt/app
       hostname: atajo.core

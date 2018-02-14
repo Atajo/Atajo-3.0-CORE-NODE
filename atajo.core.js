@@ -103,7 +103,7 @@ class Core {
                     that
                         .firewall
                         .getProviderStatus(domain, nodeCount => {
-                            socket.emit('domain:status', { nodes: nodeCount })
+                            socket.emit('domain:status', {nodes: nodeCount})
                         });
                 });
 
@@ -206,7 +206,7 @@ class Core {
                     that
                         .firewall
                         .getProviderStatus(domain, nodeCount => {
-                            socket.emit('provider:status', { nodes: nodeCount })
+                            socket.emit('provider:status', {nodes: nodeCount})
                         });
                 });
                 //DEPRECATE
@@ -243,7 +243,7 @@ if (!process.send) {
     process.env.CORE_ENV = coreRelease;
 
     let corePort = process.argv[3] || process.env.CORE_PORT || '80';
-    process.env.CORE_PORT = coreRelease;
+    process.env.CORE_PORT = corePort;
 
     let instance = new Core(0, corePort, coreRelease).start();
 
@@ -251,7 +251,7 @@ if (!process.send) {
 
 //FORKED
 process
-    .on('message', function(data) {
+    .on('message', function (data) {
 
         console.log("forked process");
 
