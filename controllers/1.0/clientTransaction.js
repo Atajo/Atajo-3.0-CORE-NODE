@@ -96,7 +96,33 @@ class Transaction {
                                 io.to(id).emit('client:tx', newTX);
                             }).catch(err => {
 
-                                log.error("ERROR SAVING TX: ", newTX);
+                                log.error("ERROR SAVING TX: ", newTX, err);
+
+                                var newTX = {
+
+                                    domain: domain,
+                                    destinationDomain: destinationDomain,
+                                    lambda: lambda,
+                                    uuid: uuid,
+                                    status: 'BUSY',
+                                    pid: pid,
+                                    latency: latency,
+                                    request: {},
+                                    version: version,
+                                    environment: tx.environment
+
+                                }
+                                new dbi.transactions(newTX).save().then(() => {
+
+                                    log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, newTX);
+                                    io.to(id).emit('client:tx', newTX);
+                                }).catch(err => {
+
+                                    log.error("ERROR PROCESSING TX: ", err);
+
+                                });
+
+
 
                             })
 
