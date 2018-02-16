@@ -114,6 +114,8 @@ class Transaction {
                                 }
                                 new dbi.transactions(newTX).save().then(() => {
 
+                                    newTX.request = tx.payload.data;
+
                                     log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, newTX);
                                     io.to(id).emit('client:tx', newTX);
                                 }).catch(err => {
