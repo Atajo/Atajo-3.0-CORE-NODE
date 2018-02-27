@@ -25,8 +25,8 @@ class Transaction {
         let version = tx.version;
         let destinationDomain = '';
 
-        if (device) {
-            device.ip = device.ip ? device.ip : socket.handshake.address;
+        if (device && socket.headers) {
+            device.ip = device.ip ? device.ip : (socket.headers['X-Forwarded-For'] || socket.headers['X-Real-IP']);
         }
 
         log.debug("REMOTE ADDRESS IS : ", device.ip);
