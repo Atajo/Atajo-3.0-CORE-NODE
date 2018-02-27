@@ -25,7 +25,7 @@ class Transaction {
         let version = tx.version;
         let destinationDomain = '';
 
-        if (device && socket.headers) {
+        if (device && socket.request.headers) {
             let remoteIpAddress = socket.request.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
             device.ip = device.ip ? device.ip : remoteIpAddress
         }
