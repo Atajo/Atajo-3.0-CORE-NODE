@@ -51,7 +51,7 @@ class Transaction {
                 client.device.battery = device.battery;
                 client.device.signal = device.signal;
                 client.device.network = device.network;
-                client.device.ip
+                client.device.ip = device.ip;
                 client.save();
 
             } else {
