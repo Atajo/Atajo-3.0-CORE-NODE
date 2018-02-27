@@ -13,7 +13,6 @@ class Transaction {
     tx(socket, tx) {
 
         log.debug("CLIENT:TX -> ", tx);
-
         var that = this;
 
 
@@ -25,6 +24,13 @@ class Transaction {
         let lambda = tx.lambda;
         let version = tx.version;
         let destinationDomain = '';
+
+        if (device) {
+            device.ip = device.ip ? device.ip : socket.handshake.address;
+        }
+
+        log.debug("REMOTE ADDRESS IS : ", device.ip);
+
 
         if (lambda.indexOf('@') > -1 && lambda.indexOf('/') > -1) {
 
@@ -45,6 +51,7 @@ class Transaction {
                 client.device.battery = device.battery;
                 client.device.signal = device.signal;
                 client.device.network = device.network;
+                client.device.ip
                 client.save();
 
             } else {
