@@ -26,7 +26,8 @@ class Transaction {
         let destinationDomain = '';
 
         if (device && socket.headers) {
-            device.ip = device.ip ? device.ip : (socket.headers['X-Forwarded-For'] || socket.headers['X-Real-IP']);
+            let remoteIpAddress = socket.request.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
+            device.ip = device.ip ? device.ip : remoteIpAddress
         }
 
         log.debug("REMOTE ADDRESS IS : ", device.ip);
