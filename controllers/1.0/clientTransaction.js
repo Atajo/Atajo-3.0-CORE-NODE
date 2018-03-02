@@ -9,16 +9,16 @@ class Transaction {
         return this;
     }
 
-
     tx(socket, tx) {
 
         log.debug("CLIENT:TX -> ", tx);
         var that = this;
 
-
         let domain = tx.domain;
         let device = tx.payload.device;
-        let uuid = device.uuid.toLowerCase();
+        let uuid = device
+            .uuid
+            .toLowerCase();
         let pid = tx.payload.pid;
         let latency = tx.latency;
         let lambda = tx.lambda;
@@ -27,206 +27,231 @@ class Transaction {
 
         if (device && socket.request.headers) {
             let remoteIpAddress = socket.request.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
-            device.ip = device.ip ? device.ip : remoteIpAddress
+            device.ip = device.ip
+                ? device.ip
+                : remoteIpAddress
         }
 
         log.debug("REMOTE ADDRESS IS : ", device.ip);
-
 
         if (lambda.indexOf('@') > -1 && lambda.indexOf('/') > -1) {
 
             let preDomain = lambda.split('/');
             destinationDomain = preDomain[0].replace('@', '');
-            lambda = preDomain.slice(1).join("/");
+            lambda = preDomain
+                .slice(1)
+                .join("/");
             log.info("@ LAMBDA REQUEST DETECTED : @" + destinationDomain + "/" + lambda + " FROM : " + domain);
 
         } else {
             destinationDomain = domain;
         }
 
-        dbi.clientConnectionStates.findOne({ uuid: uuid, domain: domain }).then(client => {
-            log.debug("CLIENT:TX CLIENT IS ", client);
+        dbi
+            .clientConnectionStates
+            .findOne({uuid: uuid, domain: domain})
+            .then(client => {
+                log.debug("CLIENT:TX CLIENT IS ", client);
 
-            if (client) {
+                if (client) {
 
-                client.device.battery = device.battery;
-                client.device.signal = device.signal;
-                client.device.network = device.network;
-                client.device.ip = device.ip;
-                client.save();
+                    client.device.battery = device.battery;
+                    client.device.signal = device.signal;
+                    client.device.network = device.network;
+                    client.device.ip = device.ip;
+                    client.save();
 
-            } else {
-                log.warn("NO CLIENT FOUND FOR TX");
-            }
+                } else {
+                    log.warn("NO CLIENT FOUND FOR TX");
+                }
 
-
-            dbi.transactions.findOne({ pid: pid }).then((transaction) => {
-                /*
+                dbi
+                    .transactions
+                    .findOne({pid: pid})
+                    .then((transaction) => {
+                        /*
                                 if (err) {
                                     log.error("ERROR FINDING PID : ", err);
                                     socket.emit('client:rx', that.response.error(pid, "Error Processing Transaction " + err));
                                     return;
                                 }
                 */
-                if (!transaction) {
+                        if (!transaction) {
 
-                    log.debug("CLIENT:TX TX DOES NOT EXIST FOR PID : ", pid);
+                            log.debug("CLIENT:TX TX DOES NOT EXIST FOR PID : ", pid);
 
+                            that
+                                .firewall
+                                .getProviderNode(destinationDomain, id => {
 
-                    that.firewall.getProviderNode(destinationDomain, id => {
+                                    if (id) {
 
-                        if (id) {
+                                        try {
+                                            tx.payload.data.device = tx.payload.device
+                                        } catch (e) {
+                                            log.warn("COULD NOT ADD DEVICE DETAILS TO PAYLOAD : ", e);
+                                        }
 
-                            try {
-                                tx.payload.data.device = tx.payload.device
-                            } catch (e) {
-                                log.warn("COULD NOT ADD DEVICE DETAILS TO PAYLOAD : ", e);
-                            }
+                                        var newTX = {
 
-                            var newTX = {
+                                            domain: domain,
+                                            destinationDomain: destinationDomain,
+                                            lambda: lambda,
+                                            uuid: uuid,
+                                            status: 'BUSY',
+                                            pid: pid,
+                                            latency: latency,
+                                            request: tx.payload.data,
+                                            version: version,
+                                            environment: tx.environment
 
-                                domain: domain,
-                                destinationDomain: destinationDomain,
-                                lambda: lambda,
-                                uuid: uuid,
-                                status: 'BUSY',
-                                pid: pid,
-                                latency: latency,
-                                request: tx.payload.data,
-                                version: version,
-                                environment: tx.environment
+                                        }
 
-                            }
+                                        new dbi
+                                            .transactions(newTX)
+                                            .save()
+                                            .then(() => {
 
-                            new dbi.transactions(newTX).save().then(() => {
+                                                log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, newTX);
+                                                io
+                                                    .to(id)
+                                                    .emit('client:tx', newTX);
+                                            })
+                                            .catch(err => {
 
-                                log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, newTX);
-                                io.to(id).emit('client:tx', newTX);
-                            }).catch(err => {
+                                                log.error("ERROR SAVING TX: ", newTX, err);
 
-                                log.error("ERROR SAVING TX: ", newTX, err);
+                                                var newTX = {
 
-                                var newTX = {
+                                                    domain: domain,
+                                                    destinationDomain: destinationDomain,
+                                                    lambda: lambda,
+                                                    uuid: uuid,
+                                                    status: 'BUSY',
+                                                    pid: pid,
+                                                    latency: latency,
+                                                    request: {},
+                                                    version: version,
+                                                    environment: tx.environment
 
-                                    domain: domain,
-                                    destinationDomain: destinationDomain,
-                                    lambda: lambda,
-                                    uuid: uuid,
-                                    status: 'BUSY',
-                                    pid: pid,
-                                    latency: latency,
-                                    request: {},
-                                    version: version,
-                                    environment: tx.environment
+                                                }
+                                                new dbi
+                                                    .transactions(newTX)
+                                                    .save()
+                                                    .then(() => {
 
-                                }
-                                new dbi.transactions(newTX).save().then(() => {
+                                                        newTX.request = tx.payload.data;
 
-                                    newTX.request = tx.payload.data;
+                                                        log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, newTX);
+                                                        io
+                                                            .to(id)
+                                                            .emit('client:tx', newTX);
+                                                    })
+                                                    .catch(err => {
 
-                                    log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, newTX);
-                                    io.to(id).emit('client:tx', newTX);
-                                }).catch(err => {
+                                                        log.error("ERROR PROCESSING TX: ", err);
 
-                                    log.error("ERROR PROCESSING TX: ", err);
+                                                    });
+
+                                            })
+
+                                    } else {
+                                        log.warn("COULD NOT SUBMIT TX TO LAMBDA -> LAMBDA NOT CONNECTED");
+                                        socket.emit('client:rx', that.response.error(pid, "No lambdas available for " + destinationDomain));
+                                    }
 
                                 });
 
-
-
-                            })
-
-
                         } else {
-                            log.warn("COULD NOT SUBMIT TX TO LAMBDA -> LAMBDA NOT CONNECTED");
-                            socket.emit('client:rx', that.response.error(pid, "No lambdas available for " + destinationDomain));
-                        }
 
-                    });
+                            log.debug("CLIENT:TX TX EXISTS FOR PID : ", pid);
 
+                            //RESPOND TO WITH DEVICE TX STATE
+                            if (transaction.status == "DONE") {
+                                log.debug("CLIENT:TX TX STATUS IS DONE FOR PID : ", pid);
+                                delete transaction.request;
+                                let response = '';
+                                try {
+                                    let responseElement = transaction.responses[transaction.responses.length - 1];
 
+                                    response = {
+                                        error: responseElement.error,
+                                        latency: transaction.latency,
+                                        pid: transaction.pid,
+                                        response: responseElement.response
+                                    }
 
-                } else {
+                                    socket.emit('client:rx', response);
 
-                    log.debug("CLIENT:TX TX EXISTS FOR PID : ", pid);
+                                } catch (e) {
 
+                                    log.warn("COULD NOT BUILD DONE ECHO RESPONSE : ", e);
 
-                    //RESPOND TO WITH DEVICE TX STATE
-                    if (transaction.status == "DONE") {
-                        log.debug("CLIENT:TX TX STATUS IS DONE FOR PID : ", pid);
-                        delete transaction.request;
-                        let response = '';
-                        try {
-                            let responseElement = transaction.responses[transaction.responses.length - 1];
+                                }
 
-                            response = {
-                                error: responseElement.error,
-                                latency: transaction.latency,
-                                pid: transaction.pid,
-                                response: responseElement.response
-                            }
+                            } else if (transaction.status == "FAILED") {
 
-                            socket.emit('client:rx', response);
+                                log.debug("CLIENT:TX TX STATUS IS FAILED FOR PID : " + pid + " --> RETRYING");
+                                that
+                                    .firewall
+                                    .getProviderNode(destinationDomain, id => {
+                                        if (id) {
+                                            transaction.status = "BUSY";
+                                            transaction.save();
+                                            log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, transaction);
+                                            io
+                                                .to(id)
+                                                .emit('client:tx', transaction);
+                                        } else {
+                                            socket.emit('client:rx', that.response.error(pid, "No lambdas available for " + destinationDomain));
+                                        }
 
+                                    });
 
-                        } catch (e) {
+                                //CHUNK REQUEST (TX NOT DONE) EMIT THE REQUEST TO PROVIDER
 
-                            log.warn("COULD NOT BUILD DONE ECHO RESPONSE : ", e);
+                            } else if (transaction.status == "BUSY") {
 
-                        }
+                                log.debug("CLIENT:TX TX STATUS IS BUSY FOR PID : ", pid);
 
+                                that
+                                    .firewall
+                                    .getProviderNode(destinationDomain, id => {
+                                        if (id) {
+                                            log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, transaction);
+                                            io
+                                                .to(id)
+                                                .emit('client:tx', transaction);
+                                        } else {
+                                            socket.emit('client:rx', that.response.error(pid, "No lambdas available for " + destinationDomain));
+                                        }
 
+                                    });
 
-                    } else if (transaction.status == "FAILED") {
+                                //CHUNK REQUEST (TX NOT DONE) EMIT THE REQUEST TO PROVIDER
 
-                        log.debug("CLIENT:TX TX STATUS IS FAILED FOR PID : " + pid + " --> RETRYING");
-                        that.firewall.getProviderNode(destinationDomain, id => {
-                            if (id) {
-                                transaction.status = "BUSY";
-                                transaction.save();
-                                log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, transaction);
-                                io.to(id).emit('client:tx', transaction);
                             } else {
-                                socket.emit('client:rx', that.response.error(pid, "No lambdas available for " + destinationDomain));
+
+                                log.debug("CLIENT:TX TX STATUS IS NOT DONE OR BUSY FOR PID : ", pid, transaction.status);
+
+                                socket.emit('client:rx', that.response.error(pid, {status: transaction.status}));
                             }
 
+                        }
 
-                        });
+                    })
+                    .catch(error => {
 
+                        log.error("COULD NOT GET PID (DROPPING) : ", error);
 
-                        //CHUNK REQUEST (TX NOT DONE) EMIT THE REQUEST TO PROVIDER
-
-                    } else if (transaction.status == "BUSY") {
-
-                        log.debug("CLIENT:TX TX STATUS IS BUSY FOR PID : ", pid);
-
-                        //CHUNK REQUEST (TX NOT DONE) EMIT THE REQUEST TO PROVIDER
-
-                    } else {
-
-                        log.debug("CLIENT:TX TX STATUS IS NOT DONE OR BUSY FOR PID : ", pid, transaction.status);
-
-                        socket.emit('client:rx', that.response.error(pid, { status: transaction.status }));
-                    }
-
-
-                }
-
-            }).catch(error => {
-
-                log.error("COULD NOT GET PID (DROPPING) : ", error);
+                    })
 
             })
+            .catch(error => {
 
+                log.error("FATAL ERROR : ", error);
 
-
-        }).catch(error => {
-
-            log.error("FATAL ERROR : ", error);
-
-
-        });
-
+            });
 
     }
 
@@ -237,78 +262,74 @@ class Transaction {
         var that = this;
         let pid = rx.pid;
 
+        dbi
+            .transactions
+            .findOne({pid: pid})
+            .then(transaction => {
 
-        dbi.transactions.findOne({ pid: pid }).then(transaction => {
+                //log.debug("TRANSACTION IS : ", transaction);
 
-            //log.debug("TRANSACTION IS : ", transaction);
-
-            if (rx.response.chunkTotal > 1) {
-                transaction.status = "BUSY";
-            } else if (rx.error) {
-                transaction.status = "FAILED";
-            } else {
-                transaction.status = "DONE";
-            }
-
-            transaction.latency = rx.latency;
-            delete rx.latency;
-            transaction.responses.push(rx);
-
-            let response = {
-                error: rx.error,
-                latency: transaction.latency,
-                pid: pid,
-                response: rx.response
-            }
-
-            transaction.lastDeviceResponse = response;
-
-            this.firewall.getClientId(transaction.uuid, transaction.domain, id => {
-
-                if (id) {
-                    log.debug("EMITTING TO DEVICE - CLIENT:RX", response);
-                    io.to(id).emit('client:rx', response);
+                if (rx.response.chunkTotal > 1) {
+                    transaction.status = "BUSY";
+                } else if (rx.error) {
+                    transaction.status = "FAILED";
+                } else {
+                    transaction.status = "DONE";
                 }
 
-            });
+                transaction.latency = rx.latency;
+                delete rx.latency;
+                transaction
+                    .responses
+                    .push(rx);
 
+                let response = {
+                    error: rx.error,
+                    latency: transaction.latency,
+                    pid: pid,
+                    response: rx.response
+                }
 
-            transaction.save().then(() => {
+                transaction.lastDeviceResponse = response;
 
-                //log.debug("TRANSACTION IS NOW : ", transaction);
+                this
+                    .firewall
+                    .getClientId(transaction.uuid, transaction.domain, id => {
 
-                //GET THE CLIENT SOCKET
+                        if (id) {
+                            log.debug("EMITTING TO DEVICE - CLIENT:RX", response);
+                            io
+                                .to(id)
+                                .emit('client:rx', response);
+                        }
 
+                    });
 
+                transaction
+                    .save()
+                    .then(() => {
 
-            }).catch(err => {
+                        //log.debug("TRANSACTION IS NOW : ", transaction); GET THE CLIENT SOCKET
 
-                log.error("ERROR SAVING RX: ", err, transaction);
+                    })
+                    .catch(err => {
 
-                //IF ITS BSON ERROR -> DUMP TO DISK AND CONTINUE
-                // if (err.indexOf('RangeError') > -1) {
-                //     log.error("MONGO THREW RANGE ERROR -> RESPONSE TOO LARGE -> TODO: DUMP TO DISK");
-                // }
+                        log.error("ERROR SAVING RX: ", err, transaction);
 
+                        // IF ITS BSON ERROR -> DUMP TO DISK AND CONTINUE if (err.indexOf('RangeError')
+                        // > -1) {     log.error("MONGO THREW RANGE ERROR -> RESPONSE TOO LARGE -> TODO:
+                        // DUMP TO DISK"); }
 
+                    })
 
+            })
+            .catch(err => {
 
+                log.error("CLIENT:RX ERROR", err);
 
             })
 
-
-
-
-
-        }).catch(err => {
-
-            log.error("CLIENT:RX ERROR", err);
-
-        })
-
-
     }
-
 
 }
 
