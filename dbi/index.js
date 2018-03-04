@@ -76,10 +76,7 @@ class DBI {
                         _.schemas[schemaRefName] = (typeof _.schemas[schemaRefName] == 'undefined')
                             ? this
                                 .Base
-                                .discriminator(schemaName, new mongoose.Schema(schemaData, {
-                                    timestamps: true,
-                                    usePushEach: true
-                                }))
+                                .discriminator(schemaName, new mongoose.Schema(schemaData, {timestamps: true}))
                             : _.schemas[schemaRefName];
                     } else {
                         _.schemas[schemaRefName] = (typeof _.schemas[schemaRefName] == 'undefined')
