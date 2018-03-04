@@ -3,7 +3,6 @@ var os = require('os');
 var fs = require('fs');
 var path = require('path');
 
-
 class DBI {
 
     constructor(config) {
@@ -35,7 +34,6 @@ class DBI {
 
         var _ = this;
         _.schemas = {};
-
 
         return new Promise((resolve, reject) => {
 
@@ -75,25 +73,30 @@ class DBI {
                     log.debug("LOADING SCHEMA " + schemaName + " (" + schemaRefName + ")");
 
                     if (this.config.discriminate) {
-                        _.schemas[schemaRefName] = (typeof _.schemas[schemaRefName] == 'undefined') ? this.Base.discriminator(schemaName, new mongoose.Schema(schemaData, { timestamps: true })) : _.schemas[schemaRefName];
+                        _.schemas[schemaRefName] = (typeof _.schemas[schemaRefName] == 'undefined')
+                            ? this
+                                .Base
+                                .discriminator(schemaName, new mongoose.Schema(schemaData, {
+                                    timestamps: true,
+                                    usePushEach: true
+                                }))
+                            : _.schemas[schemaRefName];
                     } else {
-                        _.schemas[schemaRefName] = (typeof _.schemas[schemaRefName] == 'undefined') ? mongoose.model(schemaName, new mongoose.Schema(schemaData, { timestamps: true })) : _.schemas[schemaRefName];
+                        _.schemas[schemaRefName] = (typeof _.schemas[schemaRefName] == 'undefined')
+                            ? mongoose.model(schemaName, new mongoose.Schema(schemaData, {
+                                timestamps: true,
+                                usePushEach: true
+                            }))
+                            : _.schemas[schemaRefName];
                     }
 
                 }
 
                 resolve(_);
 
-
-
             });
 
-
-
-
         })
-
-
 
     }
 
@@ -105,7 +108,7 @@ class DBI {
 
             let options = {
                 db: {
-                    native_parser: true,
+                    native_parser: true
                 },
                 useMongoClient: true
 
@@ -114,21 +117,20 @@ class DBI {
             log.info("MONGO:CONNECTING TO " + this.config.host);
 
             //CONNECT TO DB
-            mongoose.connection.on('error', reject);
-            mongoose.connection.once('open', function callback() {
-                resolve(_.schemas);
-            });
+            mongoose
+                .connection
+                .on('error', reject);
+            mongoose
+                .connection
+                .once('open', function callback() {
+                    resolve(_.schemas);
+                });
 
             mongoose.connect(this.config.host, options);
 
-
         });
 
-
-
-
     }
-
 
 }
 

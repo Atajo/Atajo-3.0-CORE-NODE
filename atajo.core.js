@@ -26,6 +26,8 @@ class Core {
         this.port = corePort;
         global.release = release; // LEGACY - TODO: REMOVE
 
+        this.connectionBuffer = [];
+
         log = new Log(release, config.get("LOGPATH") || path.join(__dirname, 'logs', 'node_' + id + '_' + corePort));
 
         global.firewall = this.firewall = new Firewall().start();
@@ -54,9 +56,13 @@ class Core {
                         global.io = new IO().listen(_.port);
                         io
                             .sockets
-                            .on('connection', (socket => {
-                                _.processConnection(socket);
-                            }));
+                            .on('connection', (socket) => {
+
+                                this
+                                    .connectionBuffer
+                                    .push(socket);
+                                this.processBuffer();
+                            });
 
                     })
                     .catch(error => {
@@ -76,7 +82,27 @@ class Core {
 
     }
 
-    processConnection(socket) {
+    processBuffer() {
+
+        let socket = this
+            .connectionBuffer
+            .pop();
+
+        if (socket) {
+
+            console.log("PROCESSING CONNECTION BUFFER : " + socket.id);
+
+            this.processConnection(socket, () => {
+
+                this.processBuffer();
+
+            });
+
+        }
+
+    }
+
+    processConnection(socket, cleared) {
 
         var that = this;
 
@@ -211,10 +237,12 @@ class Core {
                 });
                 //DEPRECATE
 
+                cleared();
+
             })
             .catch(response => {
 
-                //log.warn("FIREWALL BLOCKED CONNECTION ATTEMPT : ", response);
+                log.warn("<------[ FIREWALL BLOCKED CONNECTION ATTEMPT : ", response);
 
             });
 
