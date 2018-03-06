@@ -1,11 +1,16 @@
 var Response = require('../../lib/atajo.response');
-
+const fs = require('fs');
+const path = require('path');
+const config = require('../../config');
 class Transaction {
 
     constructor(firewall) {
 
         this.response = new Response();
         this.firewall = firewall;
+        this.cachePath = config
+            .get("CACHE")
+            .path;
         return this;
     }
 
@@ -92,68 +97,53 @@ class Transaction {
                                             log.warn("COULD NOT ADD DEVICE DETAILS TO PAYLOAD : ", e);
                                         }
 
-                                        var newTX = {
+                                        //CACHE REQUEST
+                                        fs.writeFile(path.join(that.cachePath, "request_" + pid + '.json'), JSON.stringify(tx.payload.data), (err) => {
 
-                                            domain: domain,
-                                            destinationDomain: destinationDomain,
-                                            lambda: lambda,
-                                            uuid: uuid,
-                                            status: 'BUSY',
-                                            pid: pid,
-                                            latency: latency,
-                                            request: tx.payload.data,
-                                            version: version,
-                                            environment: tx.environment
+                                            if (err) {
+                                                log.warn("COULD NOT CACHE REQUEST PAYLOAD : ", err);
+                                            }
 
-                                        }
+                                            var newTX = {
 
-                                        new dbi
-                                            .transactions(newTX)
-                                            .save()
-                                            .then(() => {
+                                                domain: domain,
+                                                destinationDomain: destinationDomain,
+                                                lambda: lambda,
+                                                uuid: uuid,
+                                                status: 'BUSY',
+                                                pid: pid,
+                                                latency: latency,
+                                                request: pid,
+                                                version: version,
+                                                environment: tx.environment
 
-                                                log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, newTX);
-                                                io
-                                                    .to(id)
-                                                    .emit('client:tx', newTX);
-                                            })
-                                            .catch(err => {
+                                            }
 
-                                                log.error("ERROR SAVING TX: ", newTX, err);
+                                            new dbi
+                                                .transactions(newTX)
+                                                .save()
+                                                .then(() => {
 
-                                                var newTX = {
+                                                    log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, newTX);
 
-                                                    domain: domain,
-                                                    destinationDomain: destinationDomain,
-                                                    lambda: lambda,
-                                                    uuid: uuid,
-                                                    status: 'BUSY',
-                                                    pid: pid,
-                                                    latency: latency,
-                                                    request: {},
-                                                    version: version,
-                                                    environment: tx.environment
+                                                    newTX.request = tx.payload.data;
+                                                    io
+                                                        .to(id)
+                                                        .emit('client:tx', newTX);
 
-                                                }
-                                                new dbi
-                                                    .transactions(newTX)
-                                                    .save()
-                                                    .then(() => {
+                                                })
+                                                .catch(err => {
 
-                                                        newTX.request = tx.payload.data;
+                                                    log.error("ERROR SAVING TX : ", newTX, err);
 
-                                                        log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, newTX);
-                                                        io
-                                                            .to(id)
-                                                            .emit('client:tx', newTX);
-                                                    })
-                                                    .catch(err => {
+                                                    newTX.request = tx.payload.data;
+                                                    io
+                                                        .to(id)
+                                                        .emit('client:tx', newTX);
 
-                                                        log.error("ERROR PROCESSING TX: ", err);
+                                                })
 
-                                                    });
-
-                                            })
+                                        });
 
                                     } else {
                                         log.warn("COULD NOT SUBMIT TX TO LAMBDA -> LAMBDA NOT CONNECTED");
@@ -199,9 +189,16 @@ class Transaction {
                                             transaction.status = "BUSY";
                                             transaction.save();
                                             log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, transaction);
-                                            io
-                                                .to(id)
-                                                .emit('client:tx', transaction);
+
+                                            fs.readFile(path.join(that.cachePath, 'request_' + transaction.pid + '.json'), 'utf-8', (result) => {
+
+                                                transaction.request = JSON.parse(result);
+                                                io
+                                                    .to(id)
+                                                    .emit('client:tx', transaction);
+
+                                            });
+
                                         } else {
                                             socket.emit('client:rx', that.response.error(pid, "No lambdas available for " + destinationDomain));
                                         }
@@ -214,7 +211,7 @@ class Transaction {
 
                                 log.debug("CLIENT:TX TX STATUS IS BUSY FOR PID : ", pid);
 
-                                that
+                                /* that
                                     .firewall
                                     .getProviderNode(destinationDomain, id => {
                                         if (id) {
@@ -226,14 +223,13 @@ class Transaction {
                                             socket.emit('client:rx', that.response.error(pid, "No lambdas available for " + destinationDomain));
                                         }
 
-                                    });
+                                    }); */
 
                                 //CHUNK REQUEST (TX NOT DONE) EMIT THE REQUEST TO PROVIDER
 
                             } else {
 
                                 log.debug("CLIENT:TX TX STATUS IS NOT DONE OR BUSY FOR PID : ", pid, transaction.status);
-
                                 socket.emit('client:rx', that.response.error(pid, {status: transaction.status}));
                             }
 
@@ -277,50 +273,58 @@ class Transaction {
                     transaction.status = "DONE";
                 }
 
-                transaction.latency = rx.latency;
-                delete rx.latency;
-                transaction
-                    .responses
-                    .push(rx);
+                fs.writeFile(path.join(that.cachePath, "response_" + pid + '.json'), JSON.stringify(rx), (err) => {
 
-                let response = {
-                    error: rx.error,
-                    latency: transaction.latency,
-                    pid: pid,
-                    response: rx.response
-                }
+                    if (err) {
+                        log.warn("ERROR SAVING RESPONSE FOR (%a) : %b", pid, err);
+                    }
 
-                transaction.lastDeviceResponse = response;
+                    transaction.latency = rx.latency;
+                    delete rx.latency;
+                    transaction
+                        .responses
+                        .push(pid);
 
-                this
-                    .firewall
-                    .getClientId(transaction.uuid, transaction.domain, id => {
+                    let response = {
+                        error: rx.error,
+                        latency: transaction.latency,
+                        pid: pid,
+                        response: rx.response
+                    }
 
-                        if (id) {
-                            log.debug("EMITTING TO DEVICE - CLIENT:RX", response);
-                            io
-                                .to(id)
-                                .emit('client:rx', response);
-                        }
+                    transaction.lastDeviceResponse = response;
 
-                    });
+                    this
+                        .firewall
+                        .getClientId(transaction.uuid, transaction.domain, id => {
 
-                transaction
-                    .save()
-                    .then(() => {
+                            if (id) {
+                                log.debug("EMITTING TO DEVICE - CLIENT:RX", response);
+                                io
+                                    .to(id)
+                                    .emit('client:rx', response);
+                            }
 
-                        //log.debug("TRANSACTION IS NOW : ", transaction); GET THE CLIENT SOCKET
+                        });
 
-                    })
-                    .catch(err => {
+                    transaction
+                        .save()
+                        .then(() => {
 
-                        log.error("ERROR SAVING RX: ", err, transaction);
+                            //log.debug("TRANSACTION IS NOW : ", transaction); GET THE CLIENT SOCKET
 
-                        // IF ITS BSON ERROR -> DUMP TO DISK AND CONTINUE if (err.indexOf('RangeError')
-                        // > -1) {     log.error("MONGO THREW RANGE ERROR -> RESPONSE TOO LARGE -> TODO:
-                        // DUMP TO DISK"); }
+                        })
+                        .catch(err => {
 
-                    })
+                            log.error("ERROR SAVING RX: ", err, transaction);
+
+                            // IF ITS BSON ERROR -> DUMP TO DISK AND CONTINUE if (err.indexOf('RangeError')
+                            // > -1) {     log.error("MONGO THREW RANGE ERROR -> RESPONSE TOO LARGE ->
+                            // TODO: DUMP TO DISK"); }
+
+                        })
+
+                });
 
             })
             .catch(err => {
@@ -330,7 +334,6 @@ class Transaction {
             })
 
     }
-
 }
 
 module.exports = Transaction;

@@ -1,37 +1,30 @@
 {
     "CONSUL": {
-
         "api": {
-
             "host": "consul.atajo.io",
             "port": 443,
             "secure": true,
             "promisify": true
-
         },
         "checkInterval": 10000,
         "fetch": {
             "mobility/core/providers": "3da0effa-3b30-c29d-3a2c-a9999aa59651",
             "mobility/domains/": "1e7343b2-e650-a87b-e8b6-5579da4e2550"
         }
-
     },
-
+    "CACHE": {
+        "path": "/cache"
+    },
     "MONGO": {
         "host": "mongodb://mongo:27017/ATAJO-CORE?connectTimeoutMS=30000",
         "discriminate": false
     },
-
     "REDIS": {
         "host": "redis",
         "port": "6379"
-
     },
-
     "CLIENT": {
-
         "SOCKET": {
-
             "OPTIONS": {
                 "reconnection": true,
                 "reconnectionAttempts": 50,
@@ -41,10 +34,6 @@
                 "timeout": 10000,
                 "autoConnect": true
             }
-
         }
-
     }
-
-
 }
