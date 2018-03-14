@@ -10,7 +10,7 @@ nconf
     .env()
     .file('package', 'package.json')
     .file({
-        file: path.join(__dirname, 'conf', `${release}.json`)
+        file: path.join(__dirname, 'config', `${release}.json`)
     })
 
 nconf.defaults({ release: release, host: host });
