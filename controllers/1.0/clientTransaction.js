@@ -191,11 +191,19 @@ class Transaction {
                                         if (id) {
                                             transaction.status = "BUSY";
                                             transaction.save();
-                                            log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, transaction);
 
-                                            fs.readFile(path.join(that.cachePath, 'request_' + transaction.pid + '.json'), 'utf-8', (result) => {
+                                            const requestFile = path.join(that.cachePath, 'request_' + transaction.pid + '.json'); 
+                                            log.debug("FETCHING REQUEST FILE @ ", requestFile);
+ 
+                                            fs.readFile(requestFile, 'utf-8', (err, result) => {
+
+                                                if(err) { 
+                                                    socket.emit('client:rx', that.response.error(pid, "Could not find cached request for pid " + transaction.pid ));
+                                                    return; 
+                                                }
 
                                                 transaction.request = JSON.parse(result);
+                                                log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, transaction);
                                                 io
                                                     .to(id)
                                                     .emit('client:tx', transaction);
