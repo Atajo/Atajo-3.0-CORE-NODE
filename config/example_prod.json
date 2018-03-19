@@ -13,7 +13,7 @@
         }
     },
     "CACHE": {
-        "path": "/opt/app/cache"
+        "path": "/opt/atajo/cache"
     },
     "MONGO": {
         "host": "mongodb://bhm-atajo-documentdb:s2xBSbEJra4qoOgbXQF13lnSOoWclEwcjPHcKuG1ZSX6ayTaJRW26Iz0dfc4kaO540WX77qq6rxpoLrRhPqiEw==@bhm-atajo-documentdb.documents.azure.com:10255/?ssl=true",
