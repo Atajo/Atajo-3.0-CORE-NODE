@@ -10,7 +10,9 @@ const fs = require('fs');
 const IO = require('./lib/atajo.io');
 const Log = require('./lib/atajo.log');
 const Firewall = require('./lib/atajo.firewall');
-const DBI = require('./dbi')
+const DBI = require('./dbi');
+
+const appInsights = require("applicationinsights");
 
 global.config = require('./config');
 global.log = null;
@@ -25,10 +27,17 @@ class Core {
 
         this.port = corePort;
         global.release = release; // LEGACY - TODO: REMOVE
-
         this.connectionBuffer = [];
 
         log = new Log(release, config.get("LOGPATH") || path.join(__dirname, 'logs', 'node_' + id + '_' + corePort));
+
+        if (config.get("INSIGHTS") && config.get("INSIGHTS").enabled) {
+
+            log.debug("STARTING INSIGHTS");
+            appInsights.setup(config.get("INSIGHTS").key);
+            appInsights.start();
+
+        }
 
         global.firewall = this.firewall = new Firewall().start();
 

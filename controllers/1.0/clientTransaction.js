@@ -98,11 +98,14 @@ class Transaction {
                                         }
 
                                         //CACHE REQUEST
-                                        fs.writeFile(path.join(that.cachePath, "request_" + pid + '.json'), JSON.stringify(tx.payload.data), (err) => {
+                                        let cacheFile = path.join(that.cachePath, "request_" + pid + '.json')
+                                        fs.writeFile(cacheFile, JSON.stringify(tx.payload.data), (err) => {
 
                                             if (err) {
                                                 log.warn("COULD NOT CACHE REQUEST PAYLOAD : ", err);
                                             }
+
+                                        }); 
 
                                             var newTX = {
 
@@ -113,7 +116,7 @@ class Transaction {
                                                 status: 'BUSY',
                                                 pid: pid,
                                                 latency: latency,
-                                                request: pid,
+                                                request: cacheFile,
                                                 version: version,
                                                 environment: tx.environment
 
@@ -143,7 +146,7 @@ class Transaction {
 
                                                 })
 
-                                        });
+                                    
 
                                     } else {
                                         log.warn("COULD NOT SUBMIT TX TO LAMBDA -> LAMBDA NOT CONNECTED");
@@ -188,11 +191,19 @@ class Transaction {
                                         if (id) {
                                             transaction.status = "BUSY";
                                             transaction.save();
-                                            log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, transaction);
 
-                                            fs.readFile(path.join(that.cachePath, 'request_' + transaction.pid + '.json'), 'utf-8', (result) => {
+                                            const requestFile = path.join(that.cachePath, 'request_' + transaction.pid + '.json'); 
+                                            log.debug("FETCHING REQUEST FILE @ ", requestFile);
+ 
+                                            fs.readFile(requestFile, 'utf-8', (err, result) => {
+
+                                                if(err) { 
+                                                    socket.emit('client:rx', that.response.error(pid, "Could not find cached request for pid " + transaction.pid ));
+                                                    return; 
+                                                }
 
                                                 transaction.request = JSON.parse(result);
+                                                log.debug("EMITTING TO LAMBDA - CLIENT:TX ON " + id, transaction);
                                                 io
                                                     .to(id)
                                                     .emit('client:tx', transaction);
@@ -273,17 +284,19 @@ class Transaction {
                     transaction.status = "DONE";
                 }
 
-                fs.writeFile(path.join(that.cachePath, "response_" + pid + '.json'), JSON.stringify(rx), (err) => {
+                let cacheFile = path.join(that.cachePath, "response_" + pid + '.json'); 
+                fs.writeFile(cacheFile, JSON.stringify(rx), (err) => {
 
                     if (err) {
                         log.warn("ERROR SAVING RESPONSE FOR (%a) : %b", pid, err);
                     }
+                }); 
 
                     transaction.latency = rx.latency;
                     delete rx.latency;
                     transaction
                         .responses
-                        .push(pid);
+                        .push(cacheFile);
 
                     let response = {
                         error: rx.error,
@@ -294,18 +307,7 @@ class Transaction {
 
                     transaction.lastDeviceResponse = response;
 
-                    this
-                        .firewall
-                        .getClientId(transaction.uuid, transaction.domain, id => {
-
-                            if (id) {
-                                log.debug("EMITTING TO DEVICE - CLIENT:RX", response);
-                                io
-                                    .to(id)
-                                    .emit('client:rx', response);
-                            }
-
-                        });
+                    
 
                     transaction
                         .save()
@@ -324,7 +326,20 @@ class Transaction {
 
                         })
 
-                });
+                      this
+                        .firewall
+                        .getClientId(transaction.uuid, transaction.domain, id => {
+
+                            if (id) {
+                                log.debug("EMITTING TO DEVICE - CLIENT:RX", response);
+                                io
+                                    .to(id)
+                                    .emit('client:rx', response);
+                            }
+
+                        });
+
+                
 
             })
             .catch(err => {

@@ -1,12 +1,15 @@
 FROM node:boron
 
-WORKDIR /opt/app
+WORKDIR /opt/atajo
 
-COPY . /opt/app
+COPY . /opt/atajo
 RUN npm install
 
 EXPOSE 30000
+
 ENV CORE_PORT=30000
-VOLUME /opt/app/config/conf
-VOLUME /opt/app/cache
-CMD /usr/local/bin/node atajo.core.js
+
+VOLUME /opt/atajo/config
+VOLUME /opt/atajo/cache
+
+CMD node atajo.core.js

@@ -12,6 +12,10 @@
             "mobility/domains/": "1e7343b2-e650-a87b-e8b6-5579da4e2550"
         }
     },
+    "INSIGHTS": {
+        "enabled": true,
+        "key": "805f5bbd-9879-4a83-b66c-611e65ec7ee2"
+    },
     "CACHE": {
         "path": "/opt/app/cache"
     },

@@ -14,6 +14,9 @@ class DBI {
             return;
         }
 
+        mongoose.Promise = global.Promise;
+
+
         this.schemaDir = path.join(__dirname, 'schemas');
 
         if (this.config.discriminate) {
@@ -104,9 +107,7 @@ class DBI {
         return new Promise((resolve, reject) => {
 
             let options = {
-                db: {
-                    native_parser: true
-                },
+                native_parser: true,
                 useMongoClient: true
 
             };
