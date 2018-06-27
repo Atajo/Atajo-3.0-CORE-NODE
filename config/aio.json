@@ -14,8 +14,7 @@
     },
     "INSIGHTS": {
         "enabled": true,
-        "key_": "805f5bbd-9879-4a83-b66c-611e65ec7ee2",
-        "key": "387968f7-40c6-447b-bf80-a446f3173fac"
+        "key": "805f5bbd-9879-4a83-b66c-611e65ec7ee2",
     },
     "CACHE": {
         "path": "/opt/app/cache"
