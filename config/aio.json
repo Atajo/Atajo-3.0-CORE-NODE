@@ -1,43 +1,43 @@
 {
-    "CONSUL": {
-        "api": {
-            "host": "consul.atajo.io",
-            "port": 443,
-            "secure": true,
-            "promisify": true
-        },
-        "checkInterval": 320000,
-        "fetch": {
-            "mobility/core/providers": "3da0effa-3b30-c29d-3a2c-a9999aa59651",
-            "mobility/domains/": "1e7343b2-e650-a87b-e8b6-5579da4e2550"
-        }
+  "CONSUL": {
+    "api": {
+      "host": "consul.atajo.io",
+      "port": 443,
+      "secure": true,
+      "promisify": true
     },
-    "INSIGHTS": {
-        "enabled": true,
-        "key": "805f5bbd-9879-4a83-b66c-611e65ec7ee2",
-    },
-    "CACHE": {
-        "path": "/opt/app/cache"
-    },
-    "MONGO": {
-        "host": "mongodb://mongo:27017/ATAJO-CORE?connectTimeoutMS=30000",
-        "discriminate": false
-    },
-    "REDIS": {
-        "host": "redis",
-        "port": "6379"
-    },
-    "CLIENT": {
-        "SOCKET": {
-            "OPTIONS": {
-                "reconnection": true,
-                "reconnectionAttempts": 50,
-                "reconnectionDelay": 1000,
-                "reconnectionDelayMax": 30000,
-                "randomizationFactor": 0.5,
-                "timeout": 10000,
-                "autoConnect": true
-            }
-        }
+    "checkInterval": 320000,
+    "fetch": {
+      "mobility/core/providers": "3da0effa-3b30-c29d-3a2c-a9999aa59651",
+      "mobility/domains/": "1e7343b2-e650-a87b-e8b6-5579da4e2550"
     }
+  },
+  "INSIGHTS": {
+    "enabled": true,
+    "key": "805f5bbd-9879-4a83-b66c-611e65ec7ee2"
+  },
+  "CACHE": {
+    "path": "/opt/app/cache"
+  },
+  "MONGO": {
+    "host": "mongodb://mongo:27017/ATAJO-CORE?connectTimeoutMS=30000",
+    "discriminate": false
+  },
+  "REDIS": {
+    "host": "redis",
+    "port": "6379"
+  },
+  "CLIENT": {
+    "SOCKET": {
+      "OPTIONS": {
+        "reconnection": true,
+        "reconnectionAttempts": 50,
+        "reconnectionDelay": 1000,
+        "reconnectionDelayMax": 30000,
+        "randomizationFactor": 0.5,
+        "timeout": 10000,
+        "autoConnect": true
+      }
+    }
+  }
 }
