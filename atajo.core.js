@@ -34,17 +34,18 @@ class Core {
         if (config.get("INSIGHTS") && config.get("INSIGHTS").enabled) {
 
             log.debug("STARTING INSIGHTS");
-            appInsights.setup(config.get("INSIGHTS").key)
-                    .setAutoDependencyCorrelation(true)
-                    .setAutoCollectRequests(true)
-                    .setAutoCollectPerformance(true)
-                    .setAutoCollectExceptions(true)
-                    .setAutoCollectDependencies(true)
-                    .setAutoCollectConsole(true)
-                    .setUseDiskRetryCaching(true)
-                    .start();
+            appInsights
+                .setup(config.get("INSIGHTS").key)
+                .setAutoDependencyCorrelation(true)
+                .setAutoCollectRequests(true)
+                .setAutoCollectPerformance(true)
+                .setAutoCollectExceptions(true)
+                .setAutoCollectDependencies(true)
+                .setAutoCollectConsole(true)
+                .setUseDiskRetryCaching(true)
+                .start();
 
-            this.insights = appInsights.defaultClient; 
+            this.insights = appInsights.defaultClient;
 
         }
 
@@ -55,8 +56,15 @@ class Core {
 
     start() {
 
-        log.debug("CORE:STARTING " + release.toUpperCase() + " ON " + _.port);
-        this.insights.trackEvent({name: "atajo.core.start", properties: { port: _.port}});
+        log.debug("CORE:STARTING " + release.toUpperCase() + " ON " + this.port);
+        this
+            .insights
+            .trackEvent({
+                name: "atajo.core.start",
+                properties: {
+                    port: this.port
+                }
+            });
 
         new DBI(config.get('MONGO'))
             .init()
@@ -70,7 +78,7 @@ class Core {
 
                         log.debug("MONGO:CONNECTED");
 
-                        global.io = new IO(this.insights).listen(_.port);
+                        global.io = new IO(this.insights).listen(this.port);
                         io
                             .sockets
                             .on('connection', (socket) => {
@@ -83,7 +91,14 @@ class Core {
 
                     })
                     .catch(error => {
-                        this.insights.trackEvent({name: "atajo.core.start.error", properties: { error: error}});
+                        this
+                            .insights
+                            .trackEvent({
+                                name: "atajo.core.start.error",
+                                properties: {
+                                    error: error
+                                }
+                            });
                         log.error("CORE:STARTUP ERROR : ", error);
                         process.exit(1);
 
@@ -93,7 +108,14 @@ class Core {
             .catch(error => {
 
                 log.error("MONGO:ERROR : ", error);
-                this.insights.trackEvent({name: "atajo.core.mongo.error", properties: { error: error}});
+                this
+                    .insights
+                    .trackEvent({
+                        name: "atajo.core.mongo.error",
+                        properties: {
+                            error: error
+                        }
+                    });
                 process.exit(1);
 
             })
