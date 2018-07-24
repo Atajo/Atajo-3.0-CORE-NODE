@@ -18,7 +18,6 @@ node atajo.core.js <release> <port>
 - port (default `80`) - The port the core node should listen on for socket connections
 
 
-
 ### 2. All-In-One Container
 
 - You can also run a core node locally as an all in one docker container which will contains all required services including MongoDB and Redis
@@ -38,8 +37,3 @@ docker-compose -f docker-compose-aio.yml up -d
 ```bash
 docker-compose -f docker-compose-prd.yml up -d
 ```
-
-
-
-
-

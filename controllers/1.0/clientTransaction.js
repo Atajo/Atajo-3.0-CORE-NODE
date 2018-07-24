@@ -8,6 +8,7 @@ class Transaction {
 
         this.response = new Response();
         this.firewall = firewall;
+        this.insights = this.firewall.insights;
         this.cachePath = config
             .get("CACHE")
             .path;
@@ -121,6 +122,9 @@ class Transaction {
                                                 environment: tx.environment
 
                                             }
+
+                                            this.insights.trackEvent({name: "atajo.core.client.transaction.start", properties: { domain: domain, destinationDomain: destinationDomain, lambda:lambda, pid:pid, uuid:uuid }});                    
+
 
                                             new dbi
                                                 .transactions(newTX)
@@ -307,7 +311,18 @@ class Transaction {
 
                     transaction.lastDeviceResponse = response;
 
+                    let trackingObject = {
+                        domain: rx.domain, 
+                        pid:pid
+                    }
+
+                    for(let i in transaction.latency)
+                    {
+                        trackingObject[i] = transaction.latency[i]; 
+                    }
+
                     
+                    this.insights.trackEvent({name: "atajo.core.client.transaction.end", properties: trackingObject});                    
 
                     transaction
                         .save()
@@ -343,6 +358,8 @@ class Transaction {
 
             })
             .catch(err => {
+
+                this.insights.trackEvent({name: "atajo.core.client.transaction.error", properties: { error: err }});                    
 
                 log.error("CLIENT:RX ERROR", err);
 

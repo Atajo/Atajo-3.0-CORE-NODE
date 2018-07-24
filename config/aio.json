@@ -6,7 +6,7 @@
             "secure": true,
             "promisify": true
         },
-        "checkInterval": 10000,
+        "checkInterval": 320000,
         "fetch": {
             "mobility/core/providers": "3da0effa-3b30-c29d-3a2c-a9999aa59651",
             "mobility/domains/": "1e7343b2-e650-a87b-e8b6-5579da4e2550"
@@ -14,7 +14,7 @@
     },
     "INSIGHTS": {
         "enabled": true,
-        "key": "805f5bbd-9879-4a83-b66c-611e65ec7ee2"
+        "key": "805f5bbd-9879-4a83-b66c-611e65ec7ee2",
     },
     "CACHE": {
         "path": "/opt/app/cache"

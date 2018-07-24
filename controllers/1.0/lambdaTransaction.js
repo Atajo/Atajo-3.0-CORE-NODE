@@ -26,7 +26,9 @@ class Transaction {
 
             let preDomain = lambda.split('/');
             destinationDomain = preDomain[0].replace('@', '');
-            lambda = preDomain[1];
+            lambda = preDomain
+                .slice(1)
+                .join("/");
             log.info("@ LAMBDA REQUEST DETECTED : @" + destinationDomain + "/" + lambda + " FROM : " + domain);
 
         } else {
@@ -62,7 +64,7 @@ class Transaction {
 
                     } else {
                         log.warn("COULD NOT SUBMIT TX TO LAMBDA -> LAMBDA NOT CONNECTED");
-                        socket.emit('lambda:rx', that.response.error(pid, "No lambdas available for " + destinationDomain));
+                        socket.emit('lambda:rx', this.response.error(pid, "No lambdas available for " + destinationDomain));
                     }
 
                 });
