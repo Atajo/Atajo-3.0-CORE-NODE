@@ -16,7 +16,6 @@ class DBI {
 
         mongoose.Promise = global.Promise;
 
-
         this.schemaDir = path.join(__dirname, 'schemas');
 
         if (this.config.discriminate) {
@@ -35,8 +34,7 @@ class DBI {
 
     init() {
 
-        var _ = this;
-        _.schemas = {};
+        this.schemas = {};
 
         return new Promise((resolve, reject) => {
 
@@ -53,7 +51,7 @@ class DBI {
                     if (file.indexOf('.js') > -1) {
                         var rNam = file.replace('.js', '');
                         try {
-                            _.schemas[rNam] = require(path.join(_.schemaDir, rNam));
+                            this.schemas[rNam] = require(path.join(this.schemaDir, rNam));
                         } catch (e) {
                             log.error("COULD NOT REQUIRE SCHEMA " + rNam + " : " + e);
                         }
@@ -61,38 +59,38 @@ class DBI {
 
                 }
 
-                if (_.schemas.length == 0) {
+                if (this.schemas.length == 0) {
                     reject("NO SCHEMAS DEFINED. NOT CONNECTING DB");
                     return;
                 }
 
                 //INIT THE SCHEMAS
-                for (var schema in _.schemas) {
+                for (var schema in this.schemas) {
 
                     var schemaName = schema;
-                    var schemaData = _.schemas[schema];
+                    var schemaData = this.schemas[schema];
 
                     var schemaRefName = schemaName.replace('Schema', '') + 's';
                     log.debug("LOADING SCHEMA " + schemaName + " (" + schemaRefName + ")");
 
                     if (this.config.discriminate) {
-                        _.schemas[schemaRefName] = (typeof _.schemas[schemaRefName] == 'undefined')
+                        this.schemas[schemaRefName] = (typeof this.schemas[schemaRefName] == 'undefined')
                             ? this
                                 .Base
                                 .discriminator(schemaName, new mongoose.Schema(schemaData, {timestamps: true}))
-                            : _.schemas[schemaRefName];
+                            : this.schemas[schemaRefName];
                     } else {
-                        _.schemas[schemaRefName] = (typeof _.schemas[schemaRefName] == 'undefined')
+                        this.schemas[schemaRefName] = (typeof this.schemas[schemaRefName] == 'undefined')
                             ? mongoose.model(schemaName, new mongoose.Schema(schemaData, {
                                 timestamps: true,
                                 usePushEach: true
                             }))
-                            : _.schemas[schemaRefName];
+                            : this.schemas[schemaRefName];
                     }
 
                 }
 
-                resolve(_);
+                resolve(this);
 
             });
 
@@ -102,14 +100,10 @@ class DBI {
 
     connect() {
 
-        var _ = this;
-
         return new Promise((resolve, reject) => {
 
             let options = {
-                native_parser: true,
-                useMongoClient: true
-
+                native_parser: true
             };
 
             log.info("MONGO:CONNECTING TO " + this.config.host);
@@ -120,8 +114,8 @@ class DBI {
                 .on('error', reject);
             mongoose
                 .connection
-                .once('open', function callback() {
-                    resolve(_.schemas);
+                .once('open', () => {
+                    resolve(this.schemas);
                 });
 
             mongoose.connect(this.config.host, options);
