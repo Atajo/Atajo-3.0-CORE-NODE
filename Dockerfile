@@ -2,8 +2,9 @@ FROM node:boron
 
 WORKDIR /opt/atajo
 
-COPY . /opt/atajo
+COPY package.json /opt/atajo
 RUN npm install
+COPY . /opt/atajo
 
 EXPOSE 30000
 

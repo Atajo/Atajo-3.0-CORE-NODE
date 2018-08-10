@@ -34,21 +34,37 @@ class Core {
         if (config.get("INSIGHTS") && config.get("INSIGHTS").enabled) {
 
             log.debug("STARTING INSIGHTS");
-            appInsights.setup(config.get("INSIGHTS").key);
-            appInsights.start();
+            appInsights
+                .setup(config.get("INSIGHTS").key)
+                .setAutoDependencyCorrelation(true)
+                .setAutoCollectRequests(true)
+                .setAutoCollectPerformance(true)
+                .setAutoCollectExceptions(true)
+                .setAutoCollectDependencies(true)
+                .setAutoCollectConsole(true)
+                .setUseDiskRetryCaching(true)
+                .start();
+
+            this.insights = appInsights.defaultClient;
 
         }
 
-        global.firewall = this.firewall = new Firewall().start();
+        global.firewall = this.firewall = new Firewall(appInsights).start();
 
         return this;
     }
 
     start() {
 
-        var _ = this;
-
-        log.debug("CORE:STARTING " + release.toUpperCase() + " ON " + _.port);
+        log.debug("CORE:STARTING " + release.toUpperCase() + " ON " + this.port);
+        this
+            .insights
+            .trackEvent({
+                name: "atajo.core.start",
+                properties: {
+                    port: this.port
+                }
+            });
 
         new DBI(config.get('MONGO'))
             .init()
@@ -62,7 +78,7 @@ class Core {
 
                         log.debug("MONGO:CONNECTED");
 
-                        global.io = new IO().listen(_.port);
+                        global.io = new IO(this.insights).listen(this.port);
                         io
                             .sockets
                             .on('connection', (socket) => {
@@ -75,7 +91,14 @@ class Core {
 
                     })
                     .catch(error => {
-
+                        this
+                            .insights
+                            .trackEvent({
+                                name: "atajo.core.start.error",
+                                properties: {
+                                    error: error
+                                }
+                            });
                         log.error("CORE:STARTUP ERROR : ", error);
                         process.exit(1);
 
@@ -85,6 +108,14 @@ class Core {
             .catch(error => {
 
                 log.error("MONGO:ERROR : ", error);
+                this
+                    .insights
+                    .trackEvent({
+                        name: "atajo.core.mongo.error",
+                        properties: {
+                            error: error
+                        }
+                    });
                 process.exit(1);
 
             })
@@ -113,8 +144,6 @@ class Core {
 
     processConnection(socket, cleared) {
 
-        var that = this;
-
         this
             .firewall
             .clear(socket)
@@ -123,7 +152,7 @@ class Core {
                 //add events
                 socket.on('disconnect', () => {
 
-                    that
+                    this
                         .firewall
                         .disconnect(socket);
                     log.debug("SOCKET DISCONNECTED : " + socket.id);
@@ -135,7 +164,7 @@ class Core {
 
                 socket.on('domain:status', data => {
                     let domain = socket.domain || data.domain;
-                    that
+                    this
                         .firewall
                         .getProviderStatus(domain, nodeCount => {
                             socket.emit('domain:status', {nodes: nodeCount})
@@ -146,7 +175,7 @@ class Core {
 
                     try {
                         let Controller = require('./controllers/' + tx.version + '/clientTransaction');
-                        let controller = new Controller(that.firewall).tx(socket, this.processLatency(tx, 'tx'));
+                        let controller = new Controller(this.firewall).tx(socket, this.processLatency(tx, 'tx'));
                     } catch (e) {
                         log.error("CLIENT:TX:TRANSACTION ERROR ", e.stack);
                     }
@@ -157,7 +186,7 @@ class Core {
 
                     try {
                         let Controller = require('./controllers/' + rx.version + '/clientTransaction');
-                        let controller = new Controller(that.firewall).rx(socket, this.processLatency(rx, 'rx'));
+                        let controller = new Controller(this.firewall).rx(socket, this.processLatency(rx, 'rx'));
                     } catch (e) {
                         log.error("CLIENT:RX:TRANSACTION ERROR ", e.stack);
                     }
@@ -168,7 +197,7 @@ class Core {
 
                     try {
                         let Controller = require('./controllers/' + tx.version + '/lambdaTransaction');
-                        let controller = new Controller(that.firewall).tx(socket, this.processLatency(tx, 'tx'));
+                        let controller = new Controller(this.firewall).tx(socket, this.processLatency(tx, 'tx'));
                     } catch (e) {
                         log.error("LAMBDA:RX:TRANSACTION ERROR ", e.stack);
                     }
@@ -180,7 +209,7 @@ class Core {
 
                     try {
                         let Controller = require('./controllers/' + rx.version + '/lambdaTransaction');
-                        let controller = new Controller(that.firewall).rx(socket, this.processLatency(rx, 'rx'));
+                        let controller = new Controller(this.firewall).rx(socket, this.processLatency(rx, 'rx'));
                     } catch (e) {
                         log.error("LAMBDA:RX:TRANSACTION ERROR ", e.stack);
                     }
@@ -217,7 +246,7 @@ class Core {
 
                     try {
                         let Controller = require('./api/controllers/apiResponse');
-                        let controller = new Controller(that.firewall).response(socket, this.processLatency(rx, 'rx'));
+                        let controller = new Controller(this.firewall).response(socket, this.processLatency(rx, 'rx'));
                     } catch (e) {
                         log.error("API:RX:TRANSACTION ERROR ", e.stack);
                     }
@@ -229,7 +258,7 @@ class Core {
                     log.warn("DEPRECATED EVENT (provider:tx) CALLED");
                     try {
                         let Controller = require('./controllers/' + rx.version + '/clientTransaction');
-                        let controller = new Controller(that.firewall).rx(socket, this.processLatency(rx, 'rx'));
+                        let controller = new Controller(this.firewall).rx(socket, this.processLatency(rx, 'rx'));
                     } catch (e) {
                         log.error("PROVIDER:TX:TRANSACTION ERROR ", e.stack);
                     }
@@ -238,7 +267,7 @@ class Core {
                 socket.on('provider:status', data => {
                     log.warn("DEPRECATED EVENT (provider:status) CALLED");
                     let domain = socket.domain || data.domain;
-                    that
+                    this
                         .firewall
                         .getProviderStatus(domain, nodeCount => {
                             socket.emit('provider:status', {nodes: nodeCount})
