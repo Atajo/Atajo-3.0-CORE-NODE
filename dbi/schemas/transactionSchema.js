@@ -10,7 +10,7 @@ module.exports = {
     responses: { type: Array, default: [] },
     latency: { type: Object, default: {} },
     version: String,
-    lastDeviceResponse: { type: Object, default: {} }
-    createdAt: { type: Date, default: Date.now, index: { expires: 90 } }
+    lastDeviceResponse: { type: Object, default: {} },
+    createdAt: { type: Date, default: Date.now, expires: 90 }
 
 };
