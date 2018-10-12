@@ -4,6 +4,7 @@ WORKDIR /opt/atajo
 
 COPY package.json /opt/atajo
 RUN npm install
+RUN mkdir logs
 COPY . /opt/atajo
 
 EXPOSE 30000
