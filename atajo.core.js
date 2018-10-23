@@ -46,11 +46,22 @@ class Core {
                 .start();
 
             this.insights = appInsights.defaultClient;
+        }
+
+        if(!this.insights) { 
+
+             this.insights = { 
+                trackEvent: () => {}, 
+                trackException: () => {}, 
+                trackMetric: () => {}, 
+                trackTrace: () => {}, 
+                trackDependency: () => {}, 
+                trackRequest: () => {}
+             }
 
         }
 
-        global.firewall = this.firewall = new Firewall(appInsights).start();
-
+        global.firewall = this.firewall = new Firewall(this.insights).start();
         return this;
     }
 
@@ -116,7 +127,13 @@ class Core {
                             error: error
                         }
                     });
-                process.exit(1);
+                
+               try { 
+                   fs.writeFileSync("/tmp/dead", "dead");
+               } catch(e) { 
+                   log.error("MONGO:ERROR -> COULD NOT WRITE /tmp/dead -> COMMITTING SUICIDE"); 
+                   process.exit(1); 
+               }
 
             })
 
