@@ -103,7 +103,14 @@ class DBI {
         return new Promise((resolve, reject) => {
 
             let options = {
-                native_parser: true
+                native_parser: true,
+                autoReconnect:true,
+                socketTimeoutMS: 480000,
+                keepAlive: 300000,
+                keepAliveInitialDelay : 300000,
+                connectTimeoutMS: 30000,
+                reconnectTries: Number.MAX_VALUE,
+                reconnectInterval: 1000
             };
 
             log.info("MONGO:CONNECTING TO " + this.config.host);

@@ -346,7 +346,7 @@ class Transaction {
                         .getClientId(transaction.uuid, transaction.domain, id => {
 
                             if (id) {
-                                log.debug("EMITTING TO DEVICE - CLIENT:RX", response);
+                                log.debug("EMITTING TO DEVICE - CLIENT:RX", response, id);
                                 io
                                     .to(id)
                                     .emit('client:rx', response);
