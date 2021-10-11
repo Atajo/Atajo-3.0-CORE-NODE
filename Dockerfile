@@ -13,4 +13,4 @@ ENV CORE_PORT=30000
 VOLUME /opt/atajo/config
 VOLUME /opt/atajo/cache
 
-CMD node atajo.core.js
+CMD node atajo.core.js --use-openssl-ca
